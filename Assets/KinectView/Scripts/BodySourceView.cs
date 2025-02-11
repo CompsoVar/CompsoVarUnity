@@ -13,11 +13,12 @@ public class BodySourceView : MonoBehaviour
 {
     public BodySourceManager mBodySourceManager;
     public GameObject mJointObject;
-
-    [SerializeField] private Material openMat;
-    [SerializeField] private Material closedMat;
-    [SerializeField] private Material lassoMat;
-    [SerializeField] private Material unknownMat;
+    [SerializeField] Transform parentHand;
+    [SerializeField] float scaleMovement = 50;
+    [SerializeField] private Sprite openMat;
+    [SerializeField] private Sprite closedMat;
+    [SerializeField] private Sprite lassoMat;
+    [SerializeField] private Sprite unknownMat;
     private HandState handLeftPreviousState;
     private HandState handRightPreviousState;
 
@@ -97,13 +98,13 @@ public class BodySourceView : MonoBehaviour
         foreach (JointType joint in _joints)
         {
             // Create Object
-            GameObject newJoint = Instantiate(mJointObject,Vector3.zero,Quaternion.identity,this.transform);
+            GameObject newJoint = Instantiate(mJointObject);
             newJoint.name = joint.ToString();
 
             // Parent to body
             newJoint.transform.parent = body.transform;
         }
-        body.transform.parent = this.transform;
+        body.transform.parent = parentHand;
         body.transform.localPosition = Vector3.zero;
         body.transform.localRotation = Quaternion.Euler(0,0,0);
         return body;
@@ -121,78 +122,64 @@ public class BodySourceView : MonoBehaviour
             targetPosition.z = 0;
             // Get joint, set new position
             Transform jointObject = bodyObject.transform.Find(_joint.ToString());
-            jointObject.localPosition = targetPosition;
+            jointObject.localPosition = targetPosition * scaleMovement;
         }
 
         if (body.HandLeftState == HandState.Closed)
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandLeft");
-            if (rend != null) rend.material = closedMat;
+
             if (handLeftPreviousState != HandState.Closed)
             {
                 SendRaycastButton(bodyObject, false);
                 SendRaycastItemClick(bodyObject, false);
             }
 
-            handLeftPreviousState = HandState.Closed;
+            ChangeHandState(bodyObject,HandState.Closed, false);
+
         }
         else if (body.HandLeftState == HandState.Open)
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandLeft");
-            if (rend != null) rend.material = openMat;
-            handLeftPreviousState = HandState.Open;
+
+            ChangeHandState(bodyObject, HandState.Open, false);
 
         }
         else if (body.HandLeftState == HandState.Lasso)
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandLeft");
-            if (rend != null) rend.material = lassoMat;
-            handLeftPreviousState = HandState.Lasso;
+
+            ChangeHandState(bodyObject, HandState.Lasso, false);
         }
         else
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandLeft");
-            if (rend != null) rend.material = unknownMat;
-            handLeftPreviousState = HandState.Unknown;
+            ChangeHandState(bodyObject, HandState.Unknown, false);
         }
 
         if (body.HandRightState == HandState.Closed)
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandRight");
-            if (rend != null) rend.material = closedMat;
+
             if (handRightPreviousState != HandState.Closed)
             {
                 SendRaycastButton(bodyObject, true);
                 SendRaycastItemClick(bodyObject, true);
             }
 
-            handRightPreviousState = HandState.Closed;
+            ChangeHandState(bodyObject, HandState.Closed, true);
         }
         else if (body.HandRightState == HandState.Open)
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandRight");
-            if (rend != null) rend.material = openMat;
-            handRightPreviousState = HandState.Open;
+
+            ChangeHandState(bodyObject, HandState.Open, true);
+
         }
         else if (body.HandRightState == HandState.Lasso)
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandRight");
-            if (rend != null) rend.material = lassoMat;
-            handRightPreviousState = HandState.Lasso;
+
+            ChangeHandState(bodyObject, HandState.Open, true);
+
         }
         else
         {
-            var rend = bodyObject.GetComponentsInChildren<Renderer>()
-                .SingleOrDefault(obj => obj.gameObject.name == "HandRight");
-            if (rend != null) rend.material = unknownMat;
-            handRightPreviousState = HandState.Unknown;
+            ChangeHandState(bodyObject, HandState.Unknown, true);
+
         }
     }
 
@@ -201,37 +188,46 @@ public class BodySourceView : MonoBehaviour
         return new Vector3(joint.Position.X * 10, joint.Position.Y * 10, joint.Position.Z * 10);
     }
 
-    private void SendRaycastItemClick(GameObject bodyObject, bool handRight)
+    public void SendRaycastItemClick(GameObject bodyObject, bool handRight)
     {
-        PointerEventData pointerData = new PointerEventData(EventSystem.current);
-        pointerData.position = Camera.main.WorldToScreenPoint(bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position);
-        Vector3 handPosition = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position;
-        // Direction du rayon (par exemple, vers l'avant de la main)
-        Vector3 direction = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").forward;
-
-        // Visualiser le raycast dans l'éditeur
-        Debug.DrawRay(handPosition, direction * 10, Color.red, 1.0f); // Dessine un rayon rouge de longueur 5
-        // Lancer le raycast
-        Ray ray = new Ray(handPosition, direction);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit))
+        // Trouver la main dans le modèle Kinect
+        Transform handTransform = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft");
+        if (handTransform == null)
         {
-            // Vérifier si l'objet touché a un composant ItemClick
-            ItemClick itemClick = hit.collider.gameObject.GetComponent<ItemClick>();
+            Debug.LogWarning("Main UI non trouvée !");
+            return;
+        }
+
+        // Récupérer la position de la main dans le Canvas (écran)
+        Vector3 screenPosition = handTransform.position;
+
+        // Tirer un rayon depuis la caméra à cette position écran
+        Ray ray = Camera.main.ScreenPointToRay(screenPosition);
+
+        // Visualiser le rayon dans la scène Unity
+        Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red, 1.0f);
+
+        // Effectuer le Raycast
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+        {
+            Debug.Log("Touching object: " + hit.collider.gameObject.name);
+
+            // Vérifier si l'objet touché a un ItemClick
+            ItemClick itemClick = hit.collider.GetComponent<ItemClick>();
             if (itemClick != null)
             {
-                print("touching cube");
-                // Exécuter l'événement de clic
+                // Simuler un clic sur l'objet
+                PointerEventData pointerData = new PointerEventData(EventSystem.current);
                 ExecuteEvents.Execute(itemClick.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
             }
         }
     }
 
+
     private void SendRaycastButton(GameObject bodyObject, bool handRight)
     {
         PointerEventData pointerData = new PointerEventData(EventSystem.current);
-        pointerData.position = Camera.main.WorldToScreenPoint(bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position);
+        pointerData.position = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position;
         List<RaycastResult> results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(pointerData, results);
         foreach (RaycastResult result in results)
@@ -244,5 +240,32 @@ public class BodySourceView : MonoBehaviour
                 break;
             }
         }
+    }
+
+    //var rend = bodyObject.GetComponentsInChildren<Renderer>()
+    //           .SingleOrDefault(obj => obj.gameObject.name == "HandRight");
+    //        if (rend != null) rend.material = unknownMat;
+    private void ChangeHandState(GameObject bodyObject,HandState handState, bool handRight)
+    {
+        
+        if (handRight)
+        {
+            handRightPreviousState = handState;
+        }
+        else
+        {
+            handLeftPreviousState = handState;
+        }
+        
+        Image imageHand = bodyObject.GetComponentsInChildren<Image>().
+            SingleOrDefault(obj => obj.gameObject.name == (handRight ? "HandRight" : "HandLeft")); 
+     
+            switch (handState)
+            {
+                case HandState.Closed: imageHand.sprite = closedMat; break;
+                case HandState.Open: imageHand.sprite = openMat; break;
+                case HandState.Lasso: imageHand.sprite = lassoMat; break;
+                case HandState.Unknown: imageHand.sprite = unknownMat; break;
+            }
     }
 }
