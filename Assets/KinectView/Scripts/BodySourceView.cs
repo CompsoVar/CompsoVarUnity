@@ -97,13 +97,15 @@ public class BodySourceView : MonoBehaviour
         foreach (JointType joint in _joints)
         {
             // Create Object
-            GameObject newJoint = Instantiate(mJointObject);
+            GameObject newJoint = Instantiate(mJointObject,Vector3.zero,Quaternion.identity,this.transform);
             newJoint.name = joint.ToString();
 
             // Parent to body
             newJoint.transform.parent = body.transform;
         }
-
+        body.transform.parent = this.transform;
+        body.transform.localPosition = Vector3.zero;
+        body.transform.localRotation = Quaternion.Euler(0,0,0);
         return body;
     }
 
@@ -115,11 +117,11 @@ public class BodySourceView : MonoBehaviour
             // Get new target position
             Joint sourceJoint = body.Joints[_joint];
             Vector3 targetPosition = GetVector3FromJoint(sourceJoint);
-            targetPosition.z = Camera.main.transform.position.z + 3;
-
+            //targetPosition.z = Camera.main.transform.position.z + 3;
+            targetPosition.z = 0;
             // Get joint, set new position
             Transform jointObject = bodyObject.transform.Find(_joint.ToString());
-            jointObject.position = targetPosition;
+            jointObject.localPosition = targetPosition;
         }
 
         if (body.HandLeftState == HandState.Closed)
@@ -129,20 +131,8 @@ public class BodySourceView : MonoBehaviour
             if (rend != null) rend.material = closedMat;
             if (handLeftPreviousState != HandState.Closed)
             {
-                PointerEventData pointerData = new PointerEventData(EventSystem.current);
-                pointerData.position = Camera.main.WorldToScreenPoint(bodyObject.transform.Find("HandLeft").position);
-                List<RaycastResult> results = new List<RaycastResult>();
-                EventSystem.current.RaycastAll(pointerData, results);
-                foreach (RaycastResult result in results)
-                {
-                    Debug.Log(results);
-                    Button button = result.gameObject.GetComponent<Button>();
-                    if (button != null)
-                    {
-                        ExecuteEvents.Execute(button.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
-                        break;
-                    }
-                }
+                SendRaycastButton(bodyObject, false);
+                SendRaycastItemClick(bodyObject, false);
             }
 
             handLeftPreviousState = HandState.Closed;
@@ -153,6 +143,7 @@ public class BodySourceView : MonoBehaviour
                 .SingleOrDefault(obj => obj.gameObject.name == "HandLeft");
             if (rend != null) rend.material = openMat;
             handLeftPreviousState = HandState.Open;
+
         }
         else if (body.HandLeftState == HandState.Lasso)
         {
@@ -176,20 +167,8 @@ public class BodySourceView : MonoBehaviour
             if (rend != null) rend.material = closedMat;
             if (handRightPreviousState != HandState.Closed)
             {
-                PointerEventData pointerData = new PointerEventData(EventSystem.current);
-                pointerData.position = Camera.main.WorldToScreenPoint(bodyObject.transform.Find("HandRight").position);
-                List<RaycastResult> results = new List<RaycastResult>();
-                EventSystem.current.RaycastAll(pointerData, results);
-                foreach (RaycastResult result in results)
-                {
-                    Debug.Log(results);
-                    Button button = result.gameObject.GetComponent<Button>();
-                    if (button != null)
-                    {
-                        ExecuteEvents.Execute(button.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
-                        break;
-                    }
-                }
+                SendRaycastButton(bodyObject, true);
+                SendRaycastItemClick(bodyObject, true);
             }
 
             handRightPreviousState = HandState.Closed;
@@ -220,5 +199,50 @@ public class BodySourceView : MonoBehaviour
     private Vector3 GetVector3FromJoint(Joint joint)
     {
         return new Vector3(joint.Position.X * 10, joint.Position.Y * 10, joint.Position.Z * 10);
+    }
+
+    private void SendRaycastItemClick(GameObject bodyObject, bool handRight)
+    {
+        PointerEventData pointerData = new PointerEventData(EventSystem.current);
+        pointerData.position = Camera.main.WorldToScreenPoint(bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position);
+        Vector3 handPosition = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position;
+        // Direction du rayon (par exemple, vers l'avant de la main)
+        Vector3 direction = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").forward;
+
+        // Visualiser le raycast dans l'éditeur
+        Debug.DrawRay(handPosition, direction * 10, Color.red, 1.0f); // Dessine un rayon rouge de longueur 5
+        // Lancer le raycast
+        Ray ray = new Ray(handPosition, direction);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            // Vérifier si l'objet touché a un composant ItemClick
+            ItemClick itemClick = hit.collider.gameObject.GetComponent<ItemClick>();
+            if (itemClick != null)
+            {
+                print("touching cube");
+                // Exécuter l'événement de clic
+                ExecuteEvents.Execute(itemClick.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+            }
+        }
+    }
+
+    private void SendRaycastButton(GameObject bodyObject, bool handRight)
+    {
+        PointerEventData pointerData = new PointerEventData(EventSystem.current);
+        pointerData.position = Camera.main.WorldToScreenPoint(bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position);
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+        foreach (RaycastResult result in results)
+        {
+            Debug.Log(results);
+            Button button = result.gameObject.GetComponent<Button>();
+            if (button != null)
+            {
+                ExecuteEvents.Execute(button.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+                break;
+            }
+        }
     }
 }
