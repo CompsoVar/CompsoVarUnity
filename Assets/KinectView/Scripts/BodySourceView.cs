@@ -30,6 +30,11 @@ public class BodySourceView : MonoBehaviour
         JointType.HandRight,
     };
 
+    private void Start()
+    {
+        Cursor.SetCursor(openMat.texture, Vector3.zero, CursorMode.Auto);
+    }
+
     void Update()
     {
         #region Get Kinect data
@@ -89,6 +94,8 @@ public class BodySourceView : MonoBehaviour
         #endregion
     }
 
+
+
     private GameObject CreateBodyObject(ulong id)
     {
         // Create body parent
@@ -100,6 +107,10 @@ public class BodySourceView : MonoBehaviour
             // Create Object
             GameObject newJoint = Instantiate(mJointObject);
             newJoint.name = joint.ToString();
+            if (newJoint.name.Contains("Left"))
+            {
+                newJoint.transform.Rotate(0, 180, 0);
+            }
 
             // Parent to body
             newJoint.transform.parent = body.transform;
@@ -109,7 +120,10 @@ public class BodySourceView : MonoBehaviour
         body.transform.localRotation = Quaternion.Euler(0,0,0);
         return body;
     }
-
+    private float handLeftClosedTime = 0f;
+    private float handRightClosedTime = 0f;
+    private bool isHandLeftClosed = false;
+    private bool isHandRightClosed = false;
     private void UpdateBodyObject(Body body, GameObject bodyObject)
     {
         // Update joints
@@ -118,68 +132,54 @@ public class BodySourceView : MonoBehaviour
             // Get new target position
             Joint sourceJoint = body.Joints[_joint];
             Vector3 targetPosition = GetVector3FromJoint(sourceJoint);
-            //targetPosition.z = Camera.main.transform.position.z + 3;
             targetPosition.z = 0;
+
             // Get joint, set new position
             Transform jointObject = bodyObject.transform.Find(_joint.ToString());
             jointObject.localPosition = targetPosition * scaleMovement;
         }
 
-        if (body.HandLeftState == HandState.Closed)
-        {
+        // Vérifier les mains avec délai
+        CheckHandState(body.HandLeftState, ref isHandLeftClosed, ref handLeftClosedTime, bodyObject, false);
+        CheckHandState(body.HandRightState, ref isHandRightClosed, ref handRightClosedTime, bodyObject, true);
+    }
 
-            if (handLeftPreviousState != HandState.Closed)
+    private void CheckHandState(HandState handState, ref bool isHandClosed, ref float handClosedTime, GameObject bodyObject, bool isRightHand)
+    {
+        if (handState == HandState.Closed)
+        {
+            if (!isHandClosed)
             {
-                SendRaycastButton(bodyObject, false);
-                SendRaycastItemClick(bodyObject, false);
+                handClosedTime = Time.time;
+                isHandClosed = true;
             }
-
-            ChangeHandState(bodyObject,HandState.Closed, false);
-
-        }
-        else if (body.HandLeftState == HandState.Open)
-        {
-
-            ChangeHandState(bodyObject, HandState.Open, false);
-
-        }
-        else if (body.HandLeftState == HandState.Lasso)
-        {
-
-            ChangeHandState(bodyObject, HandState.Lasso, false);
+            FillHandAmount(bodyObject, isRightHand, Time.time - handClosedTime);
+            // Si la main est fermée depuis au moins 1 seconde
+            if (Time.time - handClosedTime >= 1.0f)
+            {
+                SendRaycastButton(bodyObject, isRightHand);
+                SendRaycastItemClick(bodyObject, isRightHand, ActionHand.Click);                
+                ChangeHandState(bodyObject, HandState.Closed, isRightHand);
+            }
         }
         else
         {
-            ChangeHandState(bodyObject, HandState.Unknown, false);
-        }
-
-        if (body.HandRightState == HandState.Closed)
-        {
-
-            if (handRightPreviousState != HandState.Closed)
+            isHandClosed = false;
+            handClosedTime = 0f;
+            FillHandAmount(bodyObject, isRightHand, 0);
+            if (handState == HandState.Open)
             {
-                SendRaycastButton(bodyObject, true);
-                SendRaycastItemClick(bodyObject, true);
+                SendRaycastItemClick(bodyObject, isRightHand, ActionHand.Enter);
+                ChangeHandState(bodyObject, HandState.Open, isRightHand);
             }
-
-            ChangeHandState(bodyObject, HandState.Closed, true);
-        }
-        else if (body.HandRightState == HandState.Open)
-        {
-
-            ChangeHandState(bodyObject, HandState.Open, true);
-
-        }
-        else if (body.HandRightState == HandState.Lasso)
-        {
-
-            ChangeHandState(bodyObject, HandState.Open, true);
-
-        }
-        else
-        {
-            ChangeHandState(bodyObject, HandState.Unknown, true);
-
+            else if (handState == HandState.Lasso)
+            {
+                ChangeHandState(bodyObject, HandState.Lasso, isRightHand);
+            }
+            else
+            {
+                ChangeHandState(bodyObject, HandState.Unknown, isRightHand);
+            }
         }
     }
 
@@ -188,7 +188,16 @@ public class BodySourceView : MonoBehaviour
         return new Vector3(joint.Position.X * 10, joint.Position.Y * 10, joint.Position.Z * 10);
     }
 
-    public void SendRaycastItemClick(GameObject bodyObject, bool handRight)
+    public enum ActionHand
+    {
+        Click,
+        Enter,
+        Exit
+    }
+
+    private ItemClick currentItemClickRight = null;
+    private ItemClick currentItemClickLeft = null;
+    public void SendRaycastItemClick(GameObject bodyObject, bool handRight, ActionHand actionHand)
     {
         // Trouver la main dans le modèle Kinect
         Transform handTransform = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft");
@@ -218,8 +227,96 @@ public class BodySourceView : MonoBehaviour
             {
                 // Simuler un clic sur l'objet
                 PointerEventData pointerData = new PointerEventData(EventSystem.current);
-                ExecuteEvents.Execute(itemClick.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+
+                ExitHandler(handRight, pointerData);
+                if (handRight)
+                {
+                    currentItemClickRight = itemClick;
+                }
+                else
+                {
+                    currentItemClickLeft = itemClick;
+                }
+               
+                switch (actionHand)
+                {
+                    case ActionHand.Click: 
+                        ExecuteEvents.Execute(itemClick.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+                        DefaultHandVisuel(bodyObject);
+                        ChangeColorHands(bodyObject,Color.black);
+                        break;
+                    case ActionHand.Enter:
+                        if (!GameManager.Instance.UIManager.IsShowingInfoImage)
+                        {
+                            handTransform.GetChild(0).gameObject.SetActive(true);
+                            Cursor.SetCursor(closedMat.texture, Vector3.zero, CursorMode.Auto);
+                            ExecuteEvents.Execute(itemClick.gameObject, pointerData, ExecuteEvents.pointerEnterHandler);
+                        }
+                        break;
+                }
             }
+            else
+            {
+                handTransform.GetChild(0).gameObject.SetActive(false);
+                PointerEventData pointerData = new PointerEventData(EventSystem.current);
+
+                ExitHandler(handRight, pointerData);
+
+                handTransform.GetComponent<Image>().sprite = openMat;
+                Cursor.SetCursor(openMat.texture, Vector3.zero, CursorMode.Auto);
+
+            }
+        }
+        else
+        {
+            handTransform.GetChild(0).gameObject.SetActive(false);
+        }
+
+    }
+
+    private void ChangeColorHands(GameObject bodyObject, Color color)
+    {
+        bodyObject.transform.Find("HandRight").GetComponent<Image>().color = color;
+        bodyObject.transform.Find("HandLeft").GetComponent<Image>().color = color;
+    }
+
+    private void DefaultHandVisuel(GameObject bodyObject)
+    {
+        bodyObject.transform.Find("HandRight").GetChild(0).gameObject.SetActive(false);
+        bodyObject.transform.Find("HandLeft").GetChild(0).gameObject.SetActive(false);
+    }
+
+    private void FillHandAmount(GameObject bodyObject, bool handRight, float amount)
+    {
+        if (handRight)
+        {
+            FillAmount(bodyObject.transform.Find("HandRight").GetComponentInChildren<Slider>(),amount);
+        }
+        else
+        {
+            FillAmount(bodyObject.transform.Find("HandLeft").GetComponentInChildren<Slider>(), amount);
+        }
+    }
+
+    private void FillAmount(Slider slider, float amount)
+    {
+        slider.value = amount;
+    }
+
+    private void ExitHandler(bool handRight, PointerEventData pointerData)
+    {
+        if (handRight && currentItemClickRight != null)
+        {
+            ExecuteEvents.Execute(currentItemClickRight.gameObject, pointerData, ExecuteEvents.pointerExitHandler);
+            currentItemClickRight = null;
+
+
+        }
+        else if (currentItemClickLeft != null)
+        {
+            ExecuteEvents.Execute(currentItemClickLeft.gameObject, pointerData, ExecuteEvents.pointerExitHandler);
+            currentItemClickLeft = null;
+
         }
     }
 
@@ -237,8 +334,10 @@ public class BodySourceView : MonoBehaviour
             if (button != null)
             {
                 ExecuteEvents.Execute(button.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+                ChangeColorHands(bodyObject, Color.white);
                 break;
             }
+            
         }
     }
 

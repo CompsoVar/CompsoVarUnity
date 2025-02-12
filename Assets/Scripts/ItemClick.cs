@@ -3,30 +3,58 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class ItemClick : MonoBehaviour, IPointerClickHandler
+public class ItemClick : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] Sprite infoImage;
-    // Start is called before the first frame update
-    void Start()
+    private Vector3 defaultScale;
+    private void Start()
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        defaultScale = transform.localScale;
     }
 
     private void OnMouseDown()
     {
-        
+        ActionClick();
+    }
+
+    private void OnMouseEnter()
+    {
+        ActionEnter();
+    }
+
+    private void OnMouseExit()
+    {
+        ActionExit();
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        print("mousedown");
+        ActionClick();
+    }
+
+    private void ActionClick()
+    {
         GameManager.Instance.UIManager.ShowInfoImage(infoImage);
     }
 
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        ActionEnter();
+    }
+
+    private void ActionEnter()
+    {
+        transform.localScale = defaultScale * 1.2f;
+        //transform.localScale += Vector3.one/2;
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        ActionExit();
+    }
+
+    private void ActionExit()
+    {
+        transform.localScale = defaultScale;
+    }
 }

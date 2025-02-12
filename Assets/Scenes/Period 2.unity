@@ -1584,6 +1584,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mBodySourceManager: {fileID: 1889649378}
   mJointObject: {fileID: 6900486285304559465, guid: 46e4e416535edb243a82b35b3f06fee0, type: 3}
+  parentHand: {fileID: 0}
+  scaleMovement: 50
   openMat: {fileID: 2100000, guid: 427cd490dd118f14bb4d8a3b251cff50, type: 2}
   closedMat: {fileID: 2100000, guid: 71f4c47f04b02b041a1dba4a03502d2c, type: 2}
   lassoMat: {fileID: 2100000, guid: 7c1e001ffe3e21f48b28219f3a93f485, type: 2}

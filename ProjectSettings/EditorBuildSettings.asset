@@ -5,10 +5,17 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Period 2.unity
     guid: 2fdd7562c2a2bb14c94a14db5ef1159f
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Period 1.unity
     guid: 02f68b17fb557c842be2598f03f98cff
+  - enabled: 1
+    path: Assets/Scenes/LagoonWater.unity
+    guid: 1c288768d1ccef74db3349a65001d665
+  - enabled: 1
+    path: Assets/Quarry/QuarryScene.unity
+    guid: e82d03ec5679dc04eb9ed8a9c170a45d
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

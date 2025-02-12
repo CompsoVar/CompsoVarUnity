@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -19,6 +20,16 @@ public class GameManager : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
+    }
+
+    public void LoadSceneBefore()
+    {
+        SceneManager.LoadScene("LagoonWater");
+    }
+
+    public void LoadSceneAfter()
+    {
+        SceneManager.LoadScene("QuarryScene");
     }
 
 

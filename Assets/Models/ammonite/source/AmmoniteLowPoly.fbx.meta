@@ -3,7 +3,12 @@ guid: 17c0321863e4c7147b6b54e2f70c353f
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ammonite
+    second: {fileID: 2100000, guid: 91c25733c7d43e342935f5472e3f2d9b, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
