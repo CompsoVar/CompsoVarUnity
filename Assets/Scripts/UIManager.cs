@@ -18,20 +18,20 @@ public class UIManager : MonoBehaviour
         
     }
 
-    bool isShowingInfoImage = false;
+    public bool IsShowingInfoImage { private set; get; } = false;
     public void ShowInfoImage(Sprite sprite)
     {
-        if (!isShowingInfoImage)
+        if (!IsShowingInfoImage)
         {
             infoImage.sprite = sprite;
             infoImage.gameObject.SetActive(true);
-            isShowingInfoImage = true;
+            IsShowingInfoImage = true;
         }
     }
 
     public void HideImage()
     {
-        isShowingInfoImage = false;
+        IsShowingInfoImage = false;
         infoImage.gameObject.SetActive(false);
     }
 }

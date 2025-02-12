@@ -3,7 +3,42 @@ guid: 25b7d5224d2958949ab64d419c57efe8
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cycas Leaflet 01
+    second: {fileID: 2100000, guid: dfde7840daf2ae3469de7443d72043fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cycas Leaflet 02
+    second: {fileID: 2100000, guid: 9a39419569543974fac3878c44ba63ea, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cycas Leaflet 03
+    second: {fileID: 2100000, guid: 53537d7227cb30047969782491ccea7e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cycas crown shaft top
+    second: {fileID: 2100000, guid: e4783f5b55390a34d8e79c48f95c41b2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cycas crowshaft
+    second: {fileID: 2100000, guid: db05240ec87e8f64e8bd455d338c003a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cycas leaf stalk
+    second: {fileID: 2100000, guid: e51242c0f386cab45912194bb19b8e95, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cycas trunk
+    second: {fileID: 2100000, guid: a815655d6ff87854d8e428e34f040d1d, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
