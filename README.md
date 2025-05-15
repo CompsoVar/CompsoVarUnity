@@ -1,6 +1,10 @@
 # Projet CompsoVar 
 ## Par les apprentis ingénieurs Informatique et Multimédia du CNAM de La Garde
 
+### Configuration du PC
+- Exécuter avec les droits administrateurs le fichier "open-port.bat" pour permettre la connexion du boîtier avec le PC.
+- Se connecter au réseau "Compsognathus-Network" avec le mot de passe : "Compsognathus-Password"
+
 ### L'équipe:
 - **Maëlis Rakowski** - Cheffe de projet
 - **Logan De Jesus** - Développeur Unity 3D, designer environnements
