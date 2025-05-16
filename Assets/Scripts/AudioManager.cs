@@ -9,14 +9,14 @@ public class AudioManager : MonoBehaviour
 	public AudioSource musicSource;
 	public AudioSource ambianceSource;
 	public AudioSource interfaceSource;
-	public AudioSource dialogueSource;
+	public AudioSource stepSource;
 	public AudioSource soundEffectSource;
 
 	[Header("Audio Settings")]
 	[Range(0f, 1f)] public float musicVolume = 0.5f;
 	[Range(0f, 1f)] public float ambianceVolume = 0.5f;
 	[Range(0f, 1f)] public float interfaceVolume = 0.5f;
-	[Range(0f, 1f)] public float dialogueVolume = 0.5f;
+	[Range(0f, 1f)] public float stepVolume = 0.5f;
 	[Range(0f, 1f)] public float soundEffectVolume = 0.5f;
 
 
@@ -26,7 +26,7 @@ public class AudioManager : MonoBehaviour
 		if (Instance == null)
 		{
 			Instance = this;
-			DontDestroyOnLoad(gameObject); // Garde l'AudioManager entre les scènes
+			//DontDestroyOnLoad(gameObject); // Garde l'AudioManager entre les scènes
 		}
 		else
 		{
@@ -43,7 +43,7 @@ public class AudioManager : MonoBehaviour
 		if (musicSource) musicSource.volume = musicVolume;
 		if (ambianceSource) ambianceSource.volume = ambianceVolume;
 		if (interfaceSource) interfaceSource.volume = interfaceVolume;
-		if (dialogueSource) dialogueSource.volume = dialogueVolume;
+		if (stepSource) stepSource.volume = stepVolume;
 		if (soundEffectSource) soundEffectSource.volume = soundEffectVolume;
 	}
 
@@ -93,6 +93,7 @@ public class AudioManager : MonoBehaviour
 	{
 		if (interfaceSource && clip)
 		{
+			interfaceSource.pitch = 1;
 			interfaceSource.PlayOneShot(clip, interfaceVolume);
 		}
 	}
@@ -101,9 +102,9 @@ public class AudioManager : MonoBehaviour
 	#region Dialogue
 	public void PlayDialogue(AudioClip clip)
 	{
-		if (dialogueSource && clip)
+		if (stepSource && clip)
 		{
-			dialogueSource.PlayOneShot(clip, dialogueVolume);
+			stepSource.PlayOneShot(clip, stepVolume);
 		}
 	}
 	#endregion
@@ -118,6 +119,16 @@ public class AudioManager : MonoBehaviour
 			soundEffectSource.PlayOneShot(clip, soundEffectVolume);
 		}
 	}
+
+	public void PlayOnlyOneSoundStepEffect(AudioClip clip, float pitch = 1)
+    {
+        if (!stepSource.isPlaying)
+        {
+			stepSource.pitch = pitch;
+			stepSource.clip = clip;
+			stepSource.Play();
+        }
+    }
 
 
 	public void PlayStepsSoundEffect(AudioClip clip)

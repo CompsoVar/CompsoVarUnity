@@ -45,3 +45,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   infoImage: {fileID: 0}
+  fadeImage: {fileID: 0}
+  LagoonView: {fileID: 0}
+  QuarryView: {fileID: 0}
+  showClick: {fileID: 8300000, guid: c829b3f0a06cc2b44a566169eba365cd, type: 3}
+  hideClick: {fileID: 8300000, guid: a91c5c81815a7594a87cbf571c1a4eb3, type: 3}

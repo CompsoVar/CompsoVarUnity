@@ -52,12 +52,12 @@ MonoBehaviour:
   musicSource: {fileID: 1720485574585571360}
   ambianceSource: {fileID: 3307094958742910241}
   interfaceSource: {fileID: 7476611442290401458}
-  dialogueSource: {fileID: 2486901477571364439}
+  stepSource: {fileID: 2486901477571364439}
   soundEffectSource: {fileID: 860542948620712359}
   musicVolume: 0.25
   ambianceVolume: 0.5
   interfaceVolume: 0.5
-  dialogueVolume: 0.5
+  stepVolume: 0.5
   soundEffectVolume: 0.5
 --- !u!1 &2458104325640734479
 GameObject:

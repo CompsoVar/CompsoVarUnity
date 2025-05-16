@@ -51,6 +51,7 @@ public class ItemClick : MonoBehaviour //, IPointerClickHandler, IPointerEnterHa
         if(grow)
             transform.localScale = defaultScale * 1.2f;
         SetLayerRecursively(this.gameObject, LayerMask.NameToLayer("Outline"));
+ 
     }
 
     //public void OnPointerExit(PointerEventData eventData)

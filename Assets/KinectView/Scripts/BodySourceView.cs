@@ -19,10 +19,15 @@ public class BodySourceView : MonoBehaviour
     [SerializeField] private Sprite closedMat;
     [SerializeField] private Sprite lassoMat;
     [SerializeField] private Sprite unknownMat;
-    private HandState handLeftPreviousState;
-    private HandState handRightPreviousState;
+
+    [SerializeField] private AudioClip selectSound;
+    [SerializeField] private AudioClip selectTimedSound;
+
 
     private Dictionary<ulong, GameObject> mBodies = new Dictionary<ulong, GameObject>();
+
+    private Dictionary<bool, float> hoverStartTime = new Dictionary<bool, float> { { true, 0f }, { false, 0f } };
+
 
     private List<JointType> _joints = new List<JointType>
     {
@@ -74,23 +79,6 @@ public class BodySourceView : MonoBehaviour
 
         #region Create Kinect bodies
 
-        //foreach (var body in data)
-        //{
-        //    // If no body, skip
-        //    if (body == null)
-        //        continue;
-
-        //    if (body.IsTracked)
-        //    {
-        //        // If body isn't tracked, create body
-        //        if (!mBodies.ContainsKey(body.TrackingId))
-        //            mBodies[body.TrackingId] = CreateBodyObject(body.TrackingId);
-
-        //        // Update positions
-        //        UpdateBodyObject(body, mBodies[body.TrackingId]);
-        //    }
-        //}
-
         Body closestBody = null;
         float closestZ = float.MaxValue;
 
@@ -118,10 +106,9 @@ public class BodySourceView : MonoBehaviour
             UpdateBodyObject(closestBody, mBodies[closestBody.TrackingId]);
         }
 
-
         #endregion
-    }
 
+    }
 
 
     private GameObject CreateBodyObject(ulong id)
@@ -148,10 +135,7 @@ public class BodySourceView : MonoBehaviour
         body.transform.localRotation = Quaternion.Euler(0,0,0);
         return body;
     }
-    private float handLeftClosedTime = 0f;
-    private float handRightClosedTime = 0f;
-    private bool isHandLeftClosed = false;
-    private bool isHandRightClosed = false;
+
     private void UpdateBodyObject(Body body, GameObject bodyObject)
     {
         // Update joints
@@ -178,49 +162,11 @@ public class BodySourceView : MonoBehaviour
             }
         }
 
-        // Vérifier les mains avec délai
-        CheckHandState(body.HandLeftState, ref isHandLeftClosed, ref handLeftClosedTime, bodyObject, false);
-        CheckHandState(body.HandRightState, ref isHandRightClosed, ref handRightClosedTime, bodyObject, true);
+        TryRaycastInteraction(bodyObject, true);
+        TryRaycastInteraction(bodyObject, false);
+
     }
 
-    private void CheckHandState(HandState handState, ref bool isHandClosed, ref float handClosedTime, GameObject bodyObject, bool isRightHand)
-    {
-        if (handState == HandState.Closed)
-        {
-            if (!isHandClosed)
-            {
-                handClosedTime = Time.time;
-                isHandClosed = true;
-            }
-            FillHandAmount(bodyObject, isRightHand, Time.time - handClosedTime);
-            // Si la main est fermée depuis au moins 1 seconde
-            if (Time.time - handClosedTime >= 1.0f)
-            {
-                SendRaycastButton(bodyObject, isRightHand);
-                SendRaycastItemClick(bodyObject, isRightHand, ActionHand.Click);                
-                ChangeHandState(bodyObject, HandState.Closed, isRightHand);
-            }
-        }
-        else
-        {
-            isHandClosed = false;
-            handClosedTime = 0f;
-            FillHandAmount(bodyObject, isRightHand, 0);
-            SendRaycastItemClick(bodyObject, isRightHand, ActionHand.Enter);
-            if (handState == HandState.Open)
-            {
-                ChangeHandState(bodyObject, HandState.Open, isRightHand);
-            }
-            else if (handState == HandState.Lasso)
-            {
-                ChangeHandState(bodyObject, HandState.Lasso, isRightHand);
-            }
-            else
-            {
-                ChangeHandState(bodyObject, HandState.Unknown, isRightHand);
-            }
-        }
-    }
 
     private Vector3 GetVector3FromJoint(Joint joint)
     {
@@ -235,86 +181,135 @@ public class BodySourceView : MonoBehaviour
     }
 
     private Dictionary<bool, ItemClick> hoveredItems = new Dictionary<bool, ItemClick>();
+    private Dictionary<bool, Button> hoveredButtons = new Dictionary<bool, Button>();
 
-    public void SendRaycastItemClick(GameObject bodyObject, bool handRight, ActionHand actionHand)
+    private void TryRaycastInteraction(GameObject bodyObject, bool handRight)
     {
-        Transform handTransform = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft");
+        Transform hand = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft");
+        if (hand == null) return;
 
-        // Nettoyer les entrées avec objets détruits
-        List<bool> handsToRemove = new List<bool>();
-        foreach (var kvp in hoveredItems)
+        Vector3 screenPos = hand.position;
+        Ray ray = Camera.main.ScreenPointToRay(screenPos);
+
+        bool hitSomething = false;
+
+        // 1. Raycast 3D pour ItemClick
+        if (!GameManager.Instance.UIManager.IsShowingInfoImage)
         {
-            if (kvp.Value == null)
-                handsToRemove.Add(kvp.Key);
-        }
-        foreach (var hand in handsToRemove)
-        {
-            hoveredItems.Remove(hand);
-        }
-
-        if (handTransform == null)
-        {
-            Debug.LogWarning("Main UI non trouvée !");
-            return;
-        }
-
-        Vector3 screenPosition = handTransform.position;
-        Ray ray = Camera.main.ScreenPointToRay(screenPosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f))
-        {
-            ItemClick hitItem = hit.collider.GetComponent<ItemClick>();
-
-            if (hitItem != null)
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f))
             {
-                // Si cette main survolait un autre item, le désactiver
-                if (hoveredItems.TryGetValue(handRight, out var hovered) && hovered != null)
+                ItemClick item = hit.collider.GetComponent<ItemClick>();
+                if (item != null)
                 {
-                    hovered.ActionExit();
-                    hoveredItems.Remove(handRight);
+                    HandleItemHover(bodyObject, handRight, item, hand);
+                    hitSomething = true;
                 }
-
-                // Mémoriser le nouvel item hoveré
-                hoveredItems[handRight] = hitItem;
-
-                switch (actionHand)
-                {
-                    case ActionHand.Click:
-                        hitItem.ActionClick();
-                        DefaultHandVisuel(bodyObject);
-                        ChangeColorHands(bodyObject, Color.black);
-                        break;
-
-                    case ActionHand.Enter:
-                        if (!GameManager.Instance.UIManager.IsShowingInfoImage)
-                        {
-                            hitItem.ActionEnter();
-                            handTransform.GetChild(0).gameObject.SetActive(true);
-                            Cursor.SetCursor(closedMat.texture, Vector3.zero, CursorMode.Auto);
-                        }
-                        break;
-                }
-
-                return; // Pas besoin d’appeler ClearItemHover
             }
         }
 
-        // Si aucun item touché ou plus de hit => on quitte le hover
-        ClearItemHover(handRight, handTransform);
+        // 2. Raycast UI pour Button
+        if (GameManager.Instance.UIManager.IsShowingInfoImage)
+        {
+            PointerEventData data = new(EventSystem.current) { position = screenPos };
+            List<RaycastResult> results = new();
+            EventSystem.current.RaycastAll(data, results);
+
+            Button button = results.Select(r => r.gameObject.GetComponent<Button>()).FirstOrDefault(b => b != null);
+            if (button != null)
+            {
+                HandleButtonHover(bodyObject, handRight, button, data);
+                hitSomething = true;
+            }
+        }
+
+        // Aucun hit
+        if (!hitSomething)
+        {
+            ClearHoverState(bodyObject, handRight, hand);
+        }
     }
 
-    private void ClearItemHover(bool handRight, Transform handTransform)
+    private void HandleItemHover(GameObject bodyObject, bool handRight, ItemClick item, Transform hand)
     {
-        if (hoveredItems.TryGetValue(handRight, out var hovered))
+        if (!hoveredItems.TryGetValue(handRight, out var current) || current != item)
         {
-            hovered.ActionExit();
+            current?.ActionExit();
+            hoveredItems[handRight] = item;
+            hoverStartTime[handRight] = Time.time;
+            item.ActionEnter();
+            AudioManager.Instance.PlayInterfaceSound(selectSound);
+            hand.GetChild(0).gameObject.SetActive(true);
+            Cursor.SetCursor(closedMat.texture, Vector3.zero, CursorMode.Auto);
+        }
+
+        float duration = Time.time - hoverStartTime[handRight];
+        FillHandAmount(bodyObject, handRight, Mathf.Clamp01(duration / 2f));
+        if (duration >= .1f)
+            AudioManager.Instance.PlayOnlyOneSoundStepEffect(selectTimedSound, duration / 2 + 1);
+
+        if (duration >= 2f)
+        {
+            item.ActionClick();
+            ChangeColorHands(bodyObject, Color.black);
+            item.ActionExit();
+            hoveredItems.Remove(handRight);
+            hand.GetChild(0).gameObject.SetActive(false);
+            FillHandAmount(bodyObject, handRight, 0);
+            hoverStartTime[handRight] = Time.time;
+        }
+    }
+
+    private void HandleButtonHover(GameObject bodyObject, bool handRight, Button button, PointerEventData data)
+    {
+        if (!hoveredButtons.TryGetValue(handRight, out var current) || current != button)
+        {
+            if (current != null)
+                ExecuteEvents.Execute(current.gameObject, data, ExecuteEvents.pointerExitHandler);
+
+            hoveredButtons[handRight] = button;
+            hoverStartTime[handRight] = Time.time;
+            AudioManager.Instance.PlayInterfaceSound(selectSound);
+
+            ExecuteEvents.Execute(button.gameObject, data, ExecuteEvents.pointerEnterHandler);
+        }
+
+        float duration = Time.time - hoverStartTime[handRight];
+        FillHandAmount(bodyObject, handRight, Mathf.Clamp01(duration / 2f));
+
+        if(duration>=.1f)
+            AudioManager.Instance.PlayOnlyOneSoundStepEffect(selectTimedSound, duration/2 + 1);
+
+        if (duration >= 2f)
+        {
+            ExecuteEvents.Execute(button.gameObject, data, ExecuteEvents.pointerClickHandler);
+            ChangeColorHands(bodyObject, Color.white);
+            hoveredButtons.Remove(handRight);
+            FillHandAmount(bodyObject, handRight, 0);
+        }
+    }
+
+
+    private void ClearHoverState(GameObject bodyObject, bool handRight, Transform hand)
+    {
+        if (hoveredItems.TryGetValue(handRight, out var item))
+        {
+            item.ActionExit();
             hoveredItems.Remove(handRight);
         }
 
-        handTransform.GetChild(0).gameObject.SetActive(false);
-        handTransform.GetComponent<Image>().sprite = openMat;
+        if (hoveredButtons.TryGetValue(handRight, out var button))
+        {
+            ExecuteEvents.Execute(button.gameObject, new PointerEventData(EventSystem.current), ExecuteEvents.pointerExitHandler);
+            hoveredButtons.Remove(handRight);
+        }
+
+        hoverStartTime[handRight] = 0;
+        FillHandAmount(bodyObject, handRight, 0);
+        hand.GetChild(0).gameObject.SetActive(false);
+        hand.GetComponent<Image>().sprite = openMat;
         Cursor.SetCursor(openMat.texture, Vector3.zero, CursorMode.Auto);
     }
+
 
     private void ChangeColorHands(GameObject bodyObject, Color color)
     {
@@ -364,50 +359,27 @@ public class BodySourceView : MonoBehaviour
     //}
 
 
-    private void SendRaycastButton(GameObject bodyObject, bool handRight)
-    {
-        PointerEventData pointerData = new PointerEventData(EventSystem.current);
-        pointerData.position = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft").position;
-        List<RaycastResult> results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerData, results);
-        foreach (RaycastResult result in results)
-        {
-            Debug.Log(results);
-            Button button = result.gameObject.GetComponent<Button>();
-            if (button != null)
-            {
-                ExecuteEvents.Execute(button.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
-                ChangeColorHands(bodyObject, Color.white);
-                break;
-            }
-            
-        }
-    }
+    //private void ChangeHandState(GameObject bodyObject,HandState handState, bool handRight)
+    //{
 
-    //var rend = bodyObject.GetComponentsInChildren<Renderer>()
-    //           .SingleOrDefault(obj => obj.gameObject.name == "HandRight");
-    //        if (rend != null) rend.material = unknownMat;
-    private void ChangeHandState(GameObject bodyObject,HandState handState, bool handRight)
-    {
-        
-        if (handRight)
-        {
-            handRightPreviousState = handState;
-        }
-        else
-        {
-            handLeftPreviousState = handState;
-        }
-        
-        Image imageHand = bodyObject.GetComponentsInChildren<Image>().
-            SingleOrDefault(obj => obj.gameObject.name == (handRight ? "HandRight" : "HandLeft")); 
-     
-            switch (handState)
-            {
-                case HandState.Closed: imageHand.sprite = closedMat; break;
-                case HandState.Open: imageHand.sprite = openMat; break;
-                case HandState.Lasso: imageHand.sprite = lassoMat; break;
-                case HandState.Unknown: imageHand.sprite = unknownMat; break;
-            }
-    }
+    //    if (handRight)
+    //    {
+    //        handRightPreviousState = handState;
+    //    }
+    //    else
+    //    {
+    //        handLeftPreviousState = handState;
+    //    }
+
+    //    Image imageHand = bodyObject.GetComponentsInChildren<Image>().
+    //        SingleOrDefault(obj => obj.gameObject.name == (handRight ? "HandRight" : "HandLeft")); 
+
+    //        switch (handState)
+    //        {
+    //            case HandState.Closed: imageHand.sprite = closedMat; break;
+    //            case HandState.Open: imageHand.sprite = openMat; break;
+    //            case HandState.Lasso: imageHand.sprite = lassoMat; break;
+    //            case HandState.Unknown: imageHand.sprite = unknownMat; break;
+    //        }
+    //}
 }

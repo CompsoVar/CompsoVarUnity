@@ -173,6 +173,8 @@ MonoBehaviour:
   closedMat: {fileID: 21300000, guid: 323fb09eda32ab844b1551d9e09ec5a1, type: 3}
   lassoMat: {fileID: 21300000, guid: 323fb09eda32ab844b1551d9e09ec5a1, type: 3}
   unknownMat: {fileID: 21300000, guid: 323fb09eda32ab844b1551d9e09ec5a1, type: 3}
+  selectSound: {fileID: 8300000, guid: b5a882cefe809084ab62de8915952645, type: 3}
+  selectTimedSound: {fileID: 8300000, guid: a75ecf251b94dd94ca04a83492f0c193, type: 3}
 --- !u!1 &6955658590839879578
 GameObject:
   m_ObjectHideFlags: 0
@@ -308,6 +310,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8400741188703352851}
     m_Modifications:
+    - target: {fileID: 888441176492216600, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2001645966508830773, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
@@ -364,6 +370,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5746426491033206769, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6550240495642210171, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 10.409912
@@ -372,6 +382,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 48.80005
       objectReference: {fileID: 0}
+    - target: {fileID: 8018885495777177287, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8118956580423467509, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
       propertyPath: m_Name
       value: UI
@@ -379,6 +393,18 @@ PrefabInstance:
     - target: {fileID: 8118956580423467509, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8251863344732367075, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
+      propertyPath: m_fontColor.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8251863344732367075, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 3289650
+      objectReference: {fileID: 0}
+    - target: {fileID: 8588222153715628379, guid: 01b4316c0a9a54d4d9be2588ecce08e5, type: 3}
+      propertyPath: m_Color.a
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -10,6 +10,9 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] GameObject LagoonView;
     [SerializeField] GameObject QuarryView;
+
+    [SerializeField] AudioClip showClick;
+    [SerializeField] AudioClip hideClick;
     // Start is called before the first frame update
     void Start()
     {
@@ -30,6 +33,7 @@ public class UIManager : MonoBehaviour
             infoImage.sprite = sprite;
             infoImage.gameObject.SetActive(true);
             IsShowingInfoImage = true;
+            AudioManager.Instance.PlayInterfaceSound(showClick);
         }
     }
 
@@ -37,6 +41,8 @@ public class UIManager : MonoBehaviour
     {
         IsShowingInfoImage = false;
         infoImage.gameObject.SetActive(false);
+        AudioManager.Instance.PlayInterfaceSound(hideClick);
+
     }
 
 
