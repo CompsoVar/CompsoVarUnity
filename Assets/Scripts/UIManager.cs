@@ -6,6 +6,10 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     [SerializeField] Image infoImage;
+    public Image fadeImage;
+
+    [SerializeField] GameObject LagoonView;
+    [SerializeField] GameObject QuarryView;
     // Start is called before the first frame update
     void Start()
     {
@@ -33,5 +37,34 @@ public class UIManager : MonoBehaviour
     {
         IsShowingInfoImage = false;
         infoImage.gameObject.SetActive(false);
+    }
+
+
+    public IEnumerator Fade(float startAlpha, float endAlpha, float fadeDuration)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < fadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(startAlpha, endAlpha, elapsed / fadeDuration);
+
+            if (fadeImage != null)
+                fadeImage.color = new Color(0f, 0f, 0f, alpha);
+
+            yield return null;
+        }
+    }
+
+    public void ShowLagoonView()
+    {
+        LagoonView.SetActive(true);
+        QuarryView.SetActive(false);
+    }
+
+    public void ShowQuarryView()
+    {
+        LagoonView.SetActive(false);
+        QuarryView.SetActive(true);
     }
 }

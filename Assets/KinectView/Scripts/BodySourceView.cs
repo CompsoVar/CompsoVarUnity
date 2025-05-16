@@ -74,22 +74,50 @@ public class BodySourceView : MonoBehaviour
 
         #region Create Kinect bodies
 
+        //foreach (var body in data)
+        //{
+        //    // If no body, skip
+        //    if (body == null)
+        //        continue;
+
+        //    if (body.IsTracked)
+        //    {
+        //        // If body isn't tracked, create body
+        //        if (!mBodies.ContainsKey(body.TrackingId))
+        //            mBodies[body.TrackingId] = CreateBodyObject(body.TrackingId);
+
+        //        // Update positions
+        //        UpdateBodyObject(body, mBodies[body.TrackingId]);
+        //    }
+        //}
+
+        Body closestBody = null;
+        float closestZ = float.MaxValue;
+
+        // Étape 1 : trouver le corps le plus proche
         foreach (var body in data)
         {
-            // If no body, skip
-            if (body == null)
+            if (body == null || !body.IsTracked)
                 continue;
 
-            if (body.IsTracked)
-            {
-                // If body isn't tracked, create body
-                if (!mBodies.ContainsKey(body.TrackingId))
-                    mBodies[body.TrackingId] = CreateBodyObject(body.TrackingId);
+            float z = body.Joints[JointType.SpineBase].Position.Z;
 
-                // Update positions
-                UpdateBodyObject(body, mBodies[body.TrackingId]);
+            if (z < closestZ)
+            {
+                closestZ = z;
+                closestBody = body;
             }
         }
+
+        // Étape 2 : gérer uniquement ce corps
+        if (closestBody != null)
+        {
+            if (!mBodies.ContainsKey(closestBody.TrackingId))
+                mBodies[closestBody.TrackingId] = CreateBodyObject(closestBody.TrackingId);
+
+            UpdateBodyObject(closestBody, mBodies[closestBody.TrackingId]);
+        }
+
 
         #endregion
     }
@@ -134,9 +162,20 @@ public class BodySourceView : MonoBehaviour
             Vector3 targetPosition = GetVector3FromJoint(sourceJoint);
             targetPosition.z = 0;
 
-            // Get joint, set new position
+            // Get joint, smooth to new position
             Transform jointObject = bodyObject.transform.Find(_joint.ToString());
-            jointObject.localPosition = targetPosition * scaleMovement;
+
+            if (jointObject != null)
+            {
+                // Smoothing factor (adjustable, e.g., 5f = very smooth, 20f = very reactive)
+                float smoothFactor = 10f;
+
+                jointObject.localPosition = Vector3.Lerp(
+                    jointObject.localPosition,
+                    targetPosition * scaleMovement,
+                    Time.deltaTime * smoothFactor
+                );
+            }
         }
 
         // Vérifier les mains avec délai
@@ -167,9 +206,9 @@ public class BodySourceView : MonoBehaviour
             isHandClosed = false;
             handClosedTime = 0f;
             FillHandAmount(bodyObject, isRightHand, 0);
+            SendRaycastItemClick(bodyObject, isRightHand, ActionHand.Enter);
             if (handState == HandState.Open)
             {
-                SendRaycastItemClick(bodyObject, isRightHand, ActionHand.Enter);
                 ChangeHandState(bodyObject, HandState.Open, isRightHand);
             }
             else if (handState == HandState.Lasso)
@@ -195,83 +234,86 @@ public class BodySourceView : MonoBehaviour
         Exit
     }
 
-    private ItemClick currentItemClickRight = null;
-    private ItemClick currentItemClickLeft = null;
+    private Dictionary<bool, ItemClick> hoveredItems = new Dictionary<bool, ItemClick>();
+
     public void SendRaycastItemClick(GameObject bodyObject, bool handRight, ActionHand actionHand)
     {
-        // Trouver la main dans le modèle Kinect
         Transform handTransform = bodyObject.transform.Find(handRight ? "HandRight" : "HandLeft");
+
+        // Nettoyer les entrées avec objets détruits
+        List<bool> handsToRemove = new List<bool>();
+        foreach (var kvp in hoveredItems)
+        {
+            if (kvp.Value == null)
+                handsToRemove.Add(kvp.Key);
+        }
+        foreach (var hand in handsToRemove)
+        {
+            hoveredItems.Remove(hand);
+        }
+
         if (handTransform == null)
         {
             Debug.LogWarning("Main UI non trouvée !");
             return;
         }
 
-        // Récupérer la position de la main dans le Canvas (écran)
         Vector3 screenPosition = handTransform.position;
-
-        // Tirer un rayon depuis la caméra à cette position écran
         Ray ray = Camera.main.ScreenPointToRay(screenPosition);
 
-        // Visualiser le rayon dans la scène Unity
-        Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red, 1.0f);
-
-        // Effectuer le Raycast
         if (Physics.Raycast(ray, out RaycastHit hit, 100f))
         {
-            Debug.Log("Touching object: " + hit.collider.gameObject.name);
+            ItemClick hitItem = hit.collider.GetComponent<ItemClick>();
 
-            // Vérifier si l'objet touché a un ItemClick
-            ItemClick itemClick = hit.collider.GetComponent<ItemClick>();
-            if (itemClick != null)
+            if (hitItem != null)
             {
-                // Simuler un clic sur l'objet
-                PointerEventData pointerData = new PointerEventData(EventSystem.current);
+                // Si cette main survolait un autre item, le désactiver
+                if (hoveredItems.TryGetValue(handRight, out var hovered) && hovered != null)
+                {
+                    hovered.ActionExit();
+                    hoveredItems.Remove(handRight);
+                }
 
-                ExitHandler(handRight, pointerData);
-                if (handRight)
-                {
-                    currentItemClickRight = itemClick;
-                }
-                else
-                {
-                    currentItemClickLeft = itemClick;
-                }
-               
+                // Mémoriser le nouvel item hoveré
+                hoveredItems[handRight] = hitItem;
+
                 switch (actionHand)
                 {
-                    case ActionHand.Click: 
-                        ExecuteEvents.Execute(itemClick.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+                    case ActionHand.Click:
+                        hitItem.ActionClick();
                         DefaultHandVisuel(bodyObject);
-                        ChangeColorHands(bodyObject,Color.black);
+                        ChangeColorHands(bodyObject, Color.black);
                         break;
+
                     case ActionHand.Enter:
                         if (!GameManager.Instance.UIManager.IsShowingInfoImage)
                         {
+                            hitItem.ActionEnter();
                             handTransform.GetChild(0).gameObject.SetActive(true);
                             Cursor.SetCursor(closedMat.texture, Vector3.zero, CursorMode.Auto);
-                            ExecuteEvents.Execute(itemClick.gameObject, pointerData, ExecuteEvents.pointerEnterHandler);
                         }
                         break;
                 }
-            }
-            else
-            {
-                handTransform.GetChild(0).gameObject.SetActive(false);
-                PointerEventData pointerData = new PointerEventData(EventSystem.current);
 
-                ExitHandler(handRight, pointerData);
-
-                handTransform.GetComponent<Image>().sprite = openMat;
-                Cursor.SetCursor(openMat.texture, Vector3.zero, CursorMode.Auto);
-
+                return; // Pas besoin d’appeler ClearItemHover
             }
         }
-        else
+
+        // Si aucun item touché ou plus de hit => on quitte le hover
+        ClearItemHover(handRight, handTransform);
+    }
+
+    private void ClearItemHover(bool handRight, Transform handTransform)
+    {
+        if (hoveredItems.TryGetValue(handRight, out var hovered))
         {
-            handTransform.GetChild(0).gameObject.SetActive(false);
+            hovered.ActionExit();
+            hoveredItems.Remove(handRight);
         }
 
+        handTransform.GetChild(0).gameObject.SetActive(false);
+        handTransform.GetComponent<Image>().sprite = openMat;
+        Cursor.SetCursor(openMat.texture, Vector3.zero, CursorMode.Auto);
     }
 
     private void ChangeColorHands(GameObject bodyObject, Color color)
@@ -303,22 +345,23 @@ public class BodySourceView : MonoBehaviour
         slider.value = amount;
     }
 
-    private void ExitHandler(bool handRight, PointerEventData pointerData)
-    {
-        if (handRight && currentItemClickRight != null)
-        {
-            ExecuteEvents.Execute(currentItemClickRight.gameObject, pointerData, ExecuteEvents.pointerExitHandler);
-            currentItemClickRight = null;
+    //private void ExitHandler(bool handRight, PointerEventData pointerData)
+    //{
+    //    if (handRight && currentItemClickRight != null)
+    //    {
+    //        currentItemClickRight.ActionExit();
+    //        //ExecuteEvents.Execute(currentItemClickRight.gameObject, pointerData, ExecuteEvents.pointerExitHandler);
+    //        currentItemClickRight = null;
 
 
-        }
-        else if (currentItemClickLeft != null)
-        {
-            ExecuteEvents.Execute(currentItemClickLeft.gameObject, pointerData, ExecuteEvents.pointerExitHandler);
-            currentItemClickLeft = null;
-
-        }
-    }
+    //    }
+    //    else if (currentItemClickLeft != null)
+    //    {
+    //        currentItemClickLeft.ActionExit();
+    //        //ExecuteEvents.Execute(currentItemClickLeft.gameObject, pointerData, ExecuteEvents.pointerExitHandler);
+    //        currentItemClickLeft = null;
+    //    }
+    //}
 
 
     private void SendRaycastButton(GameObject bodyObject, bool handRight)

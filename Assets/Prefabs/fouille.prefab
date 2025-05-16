@@ -210,3 +210,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   infoImage: {fileID: 21300000, guid: bca36570752f162429cf4a5aedb7bfe6, type: 3}
+  outline: {fileID: 2100000, guid: eb390d7c852cb53449af569d3ffe7ea4, type: 2}

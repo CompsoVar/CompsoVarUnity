@@ -6,15 +6,15 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-
-
     public UIManager UIManager;
-
+    public SceneLoader sceneLoader;
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(this.gameObject);
+
         }
         else
         {
@@ -24,12 +24,12 @@ public class GameManager : MonoBehaviour
 
     public void LoadSceneBefore()
     {
-        SceneManager.LoadScene("LagoonWater");
+        sceneLoader.LoadScene("LagoonWater");
     }
 
     public void LoadSceneAfter()
     {
-        SceneManager.LoadScene("QuarryScene");
+        sceneLoader.LoadScene("QuarryScene");
     }
 
 
