@@ -1,9 +1,18 @@
 # Projet CompsoVar 
 ## Par les apprentis ingénieurs Informatique et Multimédia du CNAM de La Garde
 
-### Configuration du PC
-- Exécuter avec les droits administrateurs le fichier "open-port.bat" pour permettre la connexion du boîtier avec le PC.
-- Se connecter au réseau "Compsognathus-Network" avec le mot de passe : "Compsognathus-Password"
+### Descrition des livrables
+
+ - Dossier CompsoVarEmbarque : Code sources de la partie boitier physique du projet. Ce dossier contient un autre fichier readme.md pour l'explication de la partie boitier  
+ - Dossier CompsoVarUnity : Code sources de la partie informatique du projet
+ - Dossier Installeur : Dossier contenant les fichiers d'instalation des différents pilotes
+ - Fichiers XYZ.ai : Sources modifiables des fiches desciptibles
+
+### Manuel d'instalation
+1) Installer driver kinect (disponible dans le dossier "Installeur" ou sur le site : )
+2) Se connecter au réseau "Compsognathus-Network" avec le mot de passe : "Compsognathus-Password"
+3) Exécuter avec les droits administrateurs le fichier "open-port.bat" pour permettre la connexion du boîtier avec le PC.
+4) Exécuter le fichier : ZYX.exe
 
 ### L'équipe:
 - **Maëlis Rakowski** - Cheffe de projet
@@ -19,3 +28,5 @@ Merci à ***Nicoleta Mihali*** pour ses travaux open-source sur la Kinect dans U
 https://github.com/nicol3ta/kinect-unity-workshop
 
 Merci à ***Thibault Taillandier*** pour nous avoir gracieusement donné un modèle de Compsognathus.
+
+Merci à ***Antoine Dausque*** pour la fabrication du boitier.
