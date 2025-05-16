@@ -1,12 +1,14 @@
 # Projet CompsoVar 
 ## Par les apprentis ingénieurs Informatique et Multimédia du CNAM de La Garde
 
+Ce projet a été réalisé sous Untiy version 2023.17.2f1
+
 ### Descrition des livrables
 
  - Dossier CompsoVarEmbarque : Code sources de la partie boitier physique du projet. Ce dossier contient un autre fichier readme.md pour l'explication de la partie boitier  
  - Dossier CompsoVarUnity : Code sources de la partie informatique du projet
  - Dossier Installeur : Dossier contenant les fichiers d'instalation des différents pilotes
- - Fichiers XYZ.ai : Sources modifiables des fiches desciptibles
+ - Fichiers XYZ.ai : Sources modifiables des fiches desciptibles 
 
 ### Manuel d'instalation
 1) Installer driver kinect (disponible dans le dossier "Installeur" ou sur le site : )
