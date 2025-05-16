@@ -11,7 +11,7 @@ Ce projet a été réalisé sous Untiy version 2023.17.2f1
  - Fichiers XYZ.ai : Sources modifiables des fiches desciptibles 
 
 ### Manuel d'instalation
-1) Installer driver kinect (disponible dans le dossier "Installeur" (KinectSDK-v2.0_1409-Setup.exe et KinectDeveloperToolkit-v1.8.0-Setup.exe) ou sur le site : https://www.microsoft.com/en-us/download/details.aspx?id=44561)
+1) Installer driver kinect (disponible dans le dossier "Installeur" (KinectSDK-v2.0_1409-Setup.exe et KinectDeveloperToolkit-v1.8.0-Setup.exe ou sur les sites : https://www.microsoft.com/en-us/download/details.aspx?id=44561 et https://www.microsoft.com/en-us/download/details.aspx?id=40276)
 2) Se connecter au réseau "Compsognathus-Network" avec le mot de passe : "Compsognathus-Password"
 3) Exécuter avec les droits administrateurs le fichier "open-port.bat" pour permettre la connexion du boîtier avec le PC.
 4) Exécuter le fichier : ZYX.exe
