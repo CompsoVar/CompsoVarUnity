@@ -449,6 +449,14 @@ PrefabInstance:
       propertyPath: m_Colors.m_HighlightedColor.a
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4370601880098599759, guid: ad33cb40ff1aa8a4fbba6e4b4a535148, type: 3}
+      propertyPath: m_fontSize
+      value: 25.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4370601880098599759, guid: ad33cb40ff1aa8a4fbba6e4b4a535148, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 25.5
+      objectReference: {fileID: 0}
     - target: {fileID: 8278709175793352930, guid: ad33cb40ff1aa8a4fbba6e4b4a535148, type: 3}
       propertyPath: m_Name
       value: GameManager
@@ -4322,6 +4330,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 85ef5b49f1f933549adc97a397f7f829, type: 3}
   - {fileID: 8300000, guid: 73eea268ba2fb2f4a98d7d61849c6833, type: 3}
   delay: 15
+  startDelay: 0
 --- !u!1 &1366957988
 GameObject:
   m_ObjectHideFlags: 0

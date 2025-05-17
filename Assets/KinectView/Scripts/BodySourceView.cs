@@ -62,18 +62,18 @@ public class BodySourceView : MonoBehaviour
 
         #region Delete Kinect bodies
 
-        List<ulong> knownIds = new List<ulong>(mBodies.Keys);
-        foreach (ulong trackingId in knownIds)
-        {
-            if (!trackedIds.Contains(trackingId))
-            {
-                // Destroy body object
-                Destroy(mBodies[trackingId]);
+        //List<ulong> knownIds = new List<ulong>(mBodies.Keys);
+        //foreach (ulong trackingId in knownIds)
+        //{
+        //    if (!trackedIds.Contains(trackingId))
+        //    {
+        //        // Destroy body object
+        //        Destroy(mBodies[trackingId]);
 
-                // Remove from list
-                mBodies.Remove(trackingId);
-            }
-        }
+        //        // Remove from list
+        //        mBodies.Remove(trackingId);
+        //    }
+        //}
 
         #endregion
 
@@ -103,6 +103,19 @@ public class BodySourceView : MonoBehaviour
             if (!mBodies.ContainsKey(closestBody.TrackingId))
                 mBodies[closestBody.TrackingId] = CreateBodyObject(closestBody.TrackingId);
 
+            List<ulong> knownIds = new List<ulong>(mBodies.Keys);
+            foreach (ulong trackingId in knownIds)
+            {
+                if (!trackedIds.Contains(trackingId) || closestBody.TrackingId!=trackingId)
+                {
+                    // Destroy body object
+                    Destroy(mBodies[trackingId]);
+
+                    // Remove from list
+                    mBodies.Remove(trackingId);
+                }
+            }
+
             UpdateBodyObject(closestBody, mBodies[closestBody.TrackingId]);
         }
 
@@ -128,7 +141,7 @@ public class BodySourceView : MonoBehaviour
             }
 
             // Parent to body
-            newJoint.transform.parent = body.transform;
+            newJoint.transform.SetParent(body.transform);
         }
         body.transform.parent = parentHand;
         body.transform.localPosition = Vector3.zero;

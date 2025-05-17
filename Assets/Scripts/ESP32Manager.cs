@@ -61,7 +61,14 @@ public class ESP32Manager : MonoBehaviour
         targetSceneIndex = newSceneIndex;
         if (SceneManager.GetActiveScene().buildIndex != targetSceneIndex)
         {
-            SceneManager.LoadScene(targetSceneIndex);
+            if (targetSceneIndex == 0)
+            {
+                GameManager.Instance.LoadSceneBefore();
+            }
+            else
+            {
+                GameManager.Instance.LoadSceneAfter();
+            }
         }
 
     }
