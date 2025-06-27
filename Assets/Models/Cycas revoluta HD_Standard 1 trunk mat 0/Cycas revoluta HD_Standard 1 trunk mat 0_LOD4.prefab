@@ -113,5 +113,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a10f65ac520c6da4fb24156a087f3e5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  infoImage: {fileID: 21300000, guid: 3d8154d67a5b2a74a83011456b2f4afc, type: 3}
+  infoImage: {fileID: 21300000, guid: e4242b76b73738947b128633db5361a1, type: 3}
   outline: {fileID: 2100000, guid: eb390d7c852cb53449af569d3ffe7ea4, type: 2}
+  grow: 1

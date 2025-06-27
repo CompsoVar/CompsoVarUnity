@@ -67,7 +67,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a10f65ac520c6da4fb24156a087f3e5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  infoImage: {fileID: 21300000, guid: 383ae218e5babfc4b8bf25891cbae603, type: 3}
+  infoImage: {fileID: 21300000, guid: c0d20d27dfc363340ad8d731afc7f9f9, type: 3}
+  outline: {fileID: 0}
+  grow: 1
 --- !u!1001 &7507159555444757162
 PrefabInstance:
   m_ObjectHideFlags: 0
